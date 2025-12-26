@@ -1,0 +1,534 @@
+{
+  "name": "api-messaging-response",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api-communication",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        -48
+      ],
+      "id": "4297017a-16d4-46f5-a503-74b9892b67b0",
+      "name": "Webhook",
+      "webhookId": "78981ea2-8cc9-4f11-9b57-4bda927bdb2c"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.ai_prompt }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        -32
+      ],
+      "id": "18437f8a-9dd9-4db0-8d24-ea68b47d7962",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RFQzxjRmpQar1xoE",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3f3c1e47-80c4-468e-aa15-70f3f40519d4",
+              "name": "ai_prompt",
+              "value": "=You are a customer support representative for a professional marketing agency.\n\nWrite ONLY the email body content (no subject line, no heading, no outro like best regards).\n\nThe email must:\n- Acknowledge receipt of the inquiry\n- Thank the user for reaching out\n- Inform the user that the team will review the message and follow up soon\n- Use a professional, friendly, and human-like tone\n- Dont include the Hi [Name], \n- Make it long please and mention his inquiry and such\n- Make it 2 paragprahs i think make it formal and polite dont add to many spaces like enter spaces\n\n\n\nDo not include a subject line.\nDo not mention AI, automation, or internal processes.\n\nThe message was sent by {{ $json.body.name }}, {{ $json.body.email }}.\n\nUser message:\n{{ $json.body.message }}\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        -224
+      ],
+      "id": "5c81e54f-3ea1-48eb-aeda-8d21f3c10f21",
+      "name": "Extraction and Prompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb93d8eb-b4e8-44a9-b590-2d7751ef794f",
+              "name": "Body",
+              "value": "=<div style=\"max-width:600px; margin:0 auto; padding:25px; border:1px solid #ddd; border-radius:8px; background-color:#ffffff; font-family:Arial, sans-serif; color:#333;\">\n\n  <!-- Header -->\n  <div style=\"text-align:center; margin-bottom:25px;\">\n    <h2 style=\"margin:0; font-size:20px; color:#1a1a1a;\">Professional Marketing Agency</h2>\n  </div>\n\n  <!-- Greeting -->\n  <p style=\"font-size:14px; line-height:1.6; margin-bottom:20px;\">\n    Hello {{ $('Webhook').item.json.body.name }},\n  </p>\n\n  <!-- AI-generated body -->\n  <p style=\"font-size:14px; line-height:1.6; margin-bottom:20px;\">\n    {{\n      $json.content.parts[0].text\n        .replace(/\\n\\n/g, \"<br><br>\")  \n        .replace(/\\n/g, \" \")            \n    }}\n  </p>\n\n  <!-- Closing -->\n  <p style=\"font-size:14px; line-height:1.6;\">\n   Best regards, <strong><br>Professional Marketing Agency Team</strong>\n  </p>\n\n  <!-- Footer -->\n  <p style=\"font-size:12px; color:#888; line-height:1.4; margin-top:30px; text-align:center;\">\n    &copy; 2025 Professional Marketing Agency. All rights reserved.\n  </p>\n\n</div>\n",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        176
+      ],
+      "id": "b7652437-1875-4437-a725-365ac506eeef",
+      "name": "Email Contex Editing"
+    },
+    {
+      "parameters": {
+        "tableId": "N8N_LOGS",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.body.name }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.body.email }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $json.body.message }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -224
+      ],
+      "id": "a6e22c6a-4735-402f-9849-7352e5e639cb",
+      "name": "Supabase Logs",
+      "credentials": {
+        "supabaseApi": {
+          "id": "okadi3tliXtvn6dU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "alfredosantosiii.work@gmail.com",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "=Thank You for Reaching Out, {{ $('Webhook').item.json.body.name }}",
+        "html": "={{ $json.Body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        944,
+        176
+      ],
+      "id": "56986266-8f4d-4439-be54-afa89c97ae8c",
+      "name": "Send Email",
+      "webhookId": "ccefad99-ac27-4d2b-9215-b1d59f8de8b8",
+      "credentials": {
+        "smtp": {
+          "id": "LeYagKXUzTb1U60l",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"message\": \"Please provide a valid name, email address, and a message with sufficient details.\"\n}\n",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        288,
+        80
+      ],
+      "id": "88e962ad-9c5c-4629-ac70-d4fed7bc704e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Your inquiry has been received. A confirmation email has been sent.\"\n}\n",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        176
+      ],
+      "id": "bf9a34f7-f063-430d-a7c4-cc5abcb81fc0",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "13de33d3-af22-4fe0-aedd-f8317b5a5aec",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "f9b77975-fd25-406a-bebb-1687c9afb673",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "@",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        -48
+      ],
+      "id": "e330409c-b1b4-4918-b089-02a8ffb35977",
+      "name": "Validation of Email and Name"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0799af74-5091-4d7d-94af-9cbe15de3839",
+              "name": "five_minutes_ago",
+              "value": "={{ new Date(Date.now() - 5*60*1000).toISOString().replace('Z','') }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -256
+      ],
+      "id": "7366f061-af25-4077-922b-0c04a4d2d2da",
+      "name": "Extracting the time now"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "RATE_LIMITS",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "keyName": "created_at",
+              "condition": "gt",
+              "keyValue": "=\n{{ $json.five_minutes_ago }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -160
+      ],
+      "id": "cf3b49da-31e3-4837-b507-48135fd44f96",
+      "name": "Get Rate Limit Row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "okadi3tliXtvn6dU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "24d11223-eb25-4241-a4ab-b9b2c539488a",
+              "leftValue": "={{ $items(\"Get Rate Limit Row\")[0].json.email ? 1 : 0 }}\n",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -208
+      ],
+      "id": "a63f0e68-b1c4-472d-a141-aebe673601e8",
+      "name": "Check if the email is sending too much request"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"message\": \"Too many requests. Please wait a few minutes before submitting again.\"\n}\n",
+        "options": {
+          "responseCode": 429
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        -368
+      ],
+      "id": "c63b8f6a-28c0-4d94-a311-7e79dc66cccb",
+      "name": "Respond Spam"
+    },
+    {
+      "parameters": {
+        "tableId": "RATE_LIMITS",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -64
+      ],
+      "id": "20486e74-f01a-47f1-b39a-e00cbd635ff5",
+      "name": "Add Data in Rate Limit",
+      "credentials": {
+        "supabaseApi": {
+          "id": "okadi3tliXtvn6dU",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validation of Email and Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Email Contex Editing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraction and Prompt": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Contex Editing": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Logs": {
+      "main": [
+        [
+          {
+            "node": "Extraction and Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation of Email and Name": {
+      "main": [
+        [
+          {
+            "node": "Extracting the time now",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracting the time now": {
+      "main": [
+        [
+          {
+            "node": "Get Rate Limit Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rate Limit Row": {
+      "main": [
+        [
+          {
+            "node": "Check if the email is sending too much request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if the email is sending too much request": {
+      "main": [
+        [
+          {
+            "node": "Respond Spam",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Data in Rate Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Data in Rate Limit": {
+      "main": [
+        [
+          {
+            "node": "Supabase Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Singapore",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "edc1a666-cc1f-4a3b-83a2-a9207db4cd76",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2bdde205ee695a0f1d23a896e13cad8b24b432b123c277b9f377e55bff08ba4e"
+  },
+  "id": "MCnho5ErqbEkI5AV",
+  "tags": []
+}
